@@ -15,7 +15,7 @@ import android.os.IBinder;
 import android.os.PowerManager;
 
 public class StayAwakeService extends Service {
-    public final static String ACTION_TOGGLE = "com.github.shingyx.stayawake.TOGGLE";
+    public final static String ACTION_TOGGLE_STAY_AWAKE = "com.github.shingyx.stayawake.TOGGLE_STAY_AWAKE";
     public final static String ACTION_STOP_KEEPING_SCREEN_ON = "com.github.shingyx.stayon.STOP_KEEPING_SCREEN_ON";
     public final static String NOTIFICATION_CHANNEL_ID = "com.github.shingyx.lockwidget.STAY_ON_SERVICE";
 
@@ -23,26 +23,28 @@ public class StayAwakeService extends Service {
 
     private NotificationManager notificationManager;
     private PowerManager.WakeLock wakeLock;
+    private ScreenOffReceiver screenOffReceiver;
 
     @Override
     public IBinder onBind(Intent intent) {
         return null;
     }
 
-    @SuppressWarnings("deprecation")  // SCREEN_DIM_WAKE_LOCK is deprecated, but there's no replacement
+    @SuppressWarnings("deprecation")// SCREEN_DIM_WAKE_LOCK is deprecated with no valid alternative
     @Override
     public void onCreate() {
         PowerManager powerManager = getSystemService(PowerManager.class);
         notificationManager = getSystemService(NotificationManager.class);
         wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, WAKE_LOCK_TAG);
+        screenOffReceiver = new ScreenOffReceiver();
 
-        registerReceiver(new ScreenOffReceiver(), new IntentFilter(Intent.ACTION_SCREEN_OFF));
+        registerReceiver(screenOffReceiver, new IntentFilter(Intent.ACTION_SCREEN_OFF));
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent.getAction();
-        if (ACTION_TOGGLE.equals(action)) {
+        if (ACTION_TOGGLE_STAY_AWAKE.equals(action)) {
             if (!wakeLock.isHeld()) {
                 startKeepingScreenOn();
             } else {
@@ -52,6 +54,11 @@ public class StayAwakeService extends Service {
             stopKeepingScreenOn();
         }
         return START_NOT_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        unregisterReceiver(screenOffReceiver);
     }
 
     /**
@@ -75,7 +82,7 @@ public class StayAwakeService extends Service {
         Notification notification = new Notification.Builder(this, NOTIFICATION_CHANNEL_ID)
                 .setContentTitle(getString(R.string.notification_title))
                 .setContentText(getString(R.string.notification_content))
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.drawable.ic_stat_name)
                 .setContentIntent(PendingIntent.getService(this, 0, stopIntent, 0))
                 .build();
         startForeground(1, notification);
@@ -90,6 +97,7 @@ public class StayAwakeService extends Service {
         }
 
         stopForeground(true);
+        stopSelf();
     }
 
     /**

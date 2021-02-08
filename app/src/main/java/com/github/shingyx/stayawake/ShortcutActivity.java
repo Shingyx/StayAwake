@@ -12,8 +12,8 @@ public class ShortcutActivity extends Activity {
         String action = getIntent().getAction();
         if (Intent.ACTION_CREATE_SHORTCUT.equals(action)) {
             createShortcut();
-        } else if (StayAwakeService.ACTION_TOGGLE.equals(action)) {
-            lockScreen();
+        } else if (StayAwakeService.ACTION_TOGGLE_STAY_AWAKE.equals(action)) {
+            toggleStayAwake();
         }
 
         finish();
@@ -22,14 +22,14 @@ public class ShortcutActivity extends Activity {
     @SuppressWarnings("deprecation") // Use deprecated approach for no icon badge
     private void createShortcut() {
         Intent intent = new Intent();
-        intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, new Intent(StayAwakeService.ACTION_TOGGLE, null, this, getClass()));
+        intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, new Intent(StayAwakeService.ACTION_TOGGLE_STAY_AWAKE, null, this, getClass()));
         intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getString(R.string.app_name));
         intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(this, R.mipmap.ic_launcher));
         setResult(Activity.RESULT_OK, intent);
     }
 
-    private void lockScreen() {
-        Intent intent = new Intent(StayAwakeService.ACTION_TOGGLE, null, this, StayAwakeService.class);
+    private void toggleStayAwake() {
+        Intent intent = new Intent(StayAwakeService.ACTION_TOGGLE_STAY_AWAKE, null, this, StayAwakeService.class);
         startService(intent);
     }
 }
