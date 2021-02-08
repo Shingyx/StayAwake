@@ -5,16 +5,16 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
-import android.os.IBinder;
 import android.os.PowerManager;
+import android.service.quicksettings.Tile;
+import android.service.quicksettings.TileService;
 
-public class StayAwakeService extends Service {
+public class StayAwakeService extends TileService {
     public final static String ACTION_TOGGLE_STAY_AWAKE = "com.github.shingyx.stayawake.TOGGLE_STAY_AWAKE";
     public final static String ACTION_STOP_KEEPING_SCREEN_ON = "com.github.shingyx.stayon.STOP_KEEPING_SCREEN_ON";
     public final static String NOTIFICATION_CHANNEL_ID = "com.github.shingyx.lockwidget.STAY_ON_SERVICE";
@@ -25,14 +25,10 @@ public class StayAwakeService extends Service {
     private PowerManager.WakeLock wakeLock;
     private ScreenOffReceiver screenOffReceiver;
 
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
-
     @SuppressWarnings("deprecation")// SCREEN_DIM_WAKE_LOCK is deprecated with no valid alternative
     @Override
     public void onCreate() {
+        super.onCreate();
         PowerManager powerManager = getSystemService(PowerManager.class);
         notificationManager = getSystemService(NotificationManager.class);
         wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, WAKE_LOCK_TAG);
@@ -45,11 +41,7 @@ public class StayAwakeService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent.getAction();
         if (ACTION_TOGGLE_STAY_AWAKE.equals(action)) {
-            if (!wakeLock.isHeld()) {
-                startKeepingScreenOn();
-            } else {
-                stopKeepingScreenOn();
-            }
+            toggleKeepingScreenOn();
         } else if (ACTION_STOP_KEEPING_SCREEN_ON.equals(action)) {
             stopKeepingScreenOn();
         }
@@ -59,6 +51,25 @@ public class StayAwakeService extends Service {
     @Override
     public void onDestroy() {
         unregisterReceiver(screenOffReceiver);
+        super.onDestroy();
+    }
+
+    @Override
+    public void onStartListening() {
+        refreshQsTile();
+    }
+
+    @Override
+    public void onClick() {
+        toggleKeepingScreenOn();
+    }
+
+    private void toggleKeepingScreenOn() {
+        if (!wakeLock.isHeld()) {
+            startKeepingScreenOn();
+        } else {
+            stopKeepingScreenOn();
+        }
     }
 
     /**
@@ -86,6 +97,7 @@ public class StayAwakeService extends Service {
                 .setContentIntent(PendingIntent.getService(this, 0, stopIntent, 0))
                 .build();
         startForeground(1, notification);
+        refreshQsTile();
     }
 
     /**
@@ -97,7 +109,15 @@ public class StayAwakeService extends Service {
         }
 
         stopForeground(true);
-        stopSelf();
+        refreshQsTile();
+    }
+
+    private void refreshQsTile() {
+        Tile qsTile = getQsTile();
+        if (qsTile != null) {
+            qsTile.setState(wakeLock.isHeld() ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
+            qsTile.updateTile();
+        }
     }
 
     /**
