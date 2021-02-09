@@ -9,29 +9,26 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.Uri;
 import android.os.Build;
-import android.os.PowerManager;
+import android.provider.Settings;
 import android.service.quicksettings.Tile;
 import android.service.quicksettings.TileService;
+import android.widget.Toast;
 
 public class StayAwakeService extends TileService {
     public final static String ACTION_TOGGLE_STAY_AWAKE = "com.github.shingyx.stayawake.TOGGLE_STAY_AWAKE";
     public final static String ACTION_STOP_KEEPING_SCREEN_ON = "com.github.shingyx.stayon.STOP_KEEPING_SCREEN_ON";
     public final static String NOTIFICATION_CHANNEL_ID = "com.github.shingyx.lockwidget.STAY_ON_SERVICE";
 
-    private final static String WAKE_LOCK_TAG = "com.github.shingyx.stayawake:WAKE_LOCK";
-
     private NotificationManager notificationManager;
-    private PowerManager.WakeLock wakeLock;
     private ScreenOffReceiver screenOffReceiver;
+    private int previousScreenTimeout = Integer.MIN_VALUE; // min_value means disabled
 
-    @SuppressWarnings("deprecation")// SCREEN_DIM_WAKE_LOCK is deprecated with no valid alternative
     @Override
     public void onCreate() {
         super.onCreate();
-        PowerManager powerManager = getSystemService(PowerManager.class);
         notificationManager = getSystemService(NotificationManager.class);
-        wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, WAKE_LOCK_TAG);
         screenOffReceiver = new ScreenOffReceiver();
 
         registerReceiver(screenOffReceiver, new IntentFilter(Intent.ACTION_SCREEN_OFF));
@@ -65,7 +62,15 @@ public class StayAwakeService extends TileService {
     }
 
     private void toggleKeepingScreenOn() {
-        if (!wakeLock.isHeld()) {
+        if (!Settings.System.canWrite(this)) {
+            Toast.makeText(this, R.string.prompt_allow_write_settings, Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:" + getPackageName()));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            return;
+        }
+
+        if (previousScreenTimeout == Integer.MIN_VALUE) {
             startKeepingScreenOn();
         } else {
             stopKeepingScreenOn();
@@ -77,7 +82,8 @@ public class StayAwakeService extends TileService {
      */
     @SuppressLint("WakelockTimeout")
     private void startKeepingScreenOn() {
-        wakeLock.acquire();
+        previousScreenTimeout = Settings.System.getInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, Integer.MIN_VALUE);
+        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, Integer.MAX_VALUE);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel notificationChannel = new NotificationChannel(
@@ -104,8 +110,9 @@ public class StayAwakeService extends TileService {
      * Release the wake lock and remove the foreground service notification.
      */
     private void stopKeepingScreenOn() {
-        if (wakeLock.isHeld()) {
-            wakeLock.release();
+        if (previousScreenTimeout != Integer.MIN_VALUE) {
+            Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, previousScreenTimeout);
+            previousScreenTimeout = Integer.MIN_VALUE;
         }
 
         stopForeground(true);
@@ -115,7 +122,7 @@ public class StayAwakeService extends TileService {
     private void refreshQsTile() {
         Tile qsTile = getQsTile();
         if (qsTile != null) {
-            qsTile.setState(wakeLock.isHeld() ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
+            qsTile.setState(previousScreenTimeout != Integer.MIN_VALUE ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
             qsTile.updateTile();
         }
     }
