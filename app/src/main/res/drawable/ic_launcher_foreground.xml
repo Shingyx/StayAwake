@@ -9,12 +9,12 @@
         android:translateY="200">
         <path
             android:pathData="M296,85A150,150 0,1 1,104 85"
-            android:strokeWidth="32"
+            android:strokeWidth="40"
             android:strokeColor="@android:color/white"
             android:strokeLineCap="round" />
         <path
             android:pathData="M200,150L200,15"
-            android:strokeWidth="32"
+            android:strokeWidth="40"
             android:strokeColor="@android:color/white"
             android:strokeLineCap="round" />
     </group>
