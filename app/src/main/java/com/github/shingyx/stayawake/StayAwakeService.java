@@ -23,13 +23,14 @@ public class StayAwakeService extends TileService {
 
     private NotificationManager notificationManager;
     private ScreenOffReceiver screenOffReceiver;
-    private int previousScreenTimeout = Integer.MIN_VALUE; // min_value means disabled
+    private AppPreferences appPreferences;
 
     @Override
     public void onCreate() {
         super.onCreate();
         notificationManager = getSystemService(NotificationManager.class);
         screenOffReceiver = new ScreenOffReceiver();
+        appPreferences = new AppPreferences(this);
 
         registerReceiver(screenOffReceiver, new IntentFilter(Intent.ACTION_SCREEN_OFF));
     }
@@ -70,7 +71,7 @@ public class StayAwakeService extends TileService {
             return;
         }
 
-        if (previousScreenTimeout == Integer.MIN_VALUE) {
+        if (appPreferences.isPreviousScreenTimeoutUnknown()) {
             startKeepingScreenOn();
         } else {
             stopKeepingScreenOn();
@@ -82,7 +83,8 @@ public class StayAwakeService extends TileService {
      */
     @SuppressLint("WakelockTimeout")
     private void startKeepingScreenOn() {
-        previousScreenTimeout = Settings.System.getInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, Integer.MIN_VALUE);
+        int screenTimeout = Settings.System.getInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, Integer.MIN_VALUE);
+        appPreferences.setPreviousScreenTimeout(screenTimeout);
         Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, Integer.MAX_VALUE);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -110,9 +112,9 @@ public class StayAwakeService extends TileService {
      * Release the wake lock and remove the foreground service notification.
      */
     private void stopKeepingScreenOn() {
-        if (previousScreenTimeout != Integer.MIN_VALUE) {
-            Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, previousScreenTimeout);
-            previousScreenTimeout = Integer.MIN_VALUE;
+        if (!appPreferences.isPreviousScreenTimeoutUnknown()) {
+            Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, appPreferences.getPreviousScreenTimeout());
+            appPreferences.setPreviousScreenTimeoutUnknown();
         }
 
         stopForeground(true);
@@ -122,7 +124,10 @@ public class StayAwakeService extends TileService {
     private void refreshQsTile() {
         Tile qsTile = getQsTile();
         if (qsTile != null) {
-            qsTile.setState(previousScreenTimeout != Integer.MIN_VALUE ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
+            int state = appPreferences.isPreviousScreenTimeoutUnknown()
+                    ? Tile.STATE_INACTIVE
+                    : Tile.STATE_ACTIVE;
+            qsTile.setState(state);
             qsTile.updateTile();
         }
     }
