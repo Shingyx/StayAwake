@@ -24,11 +24,11 @@ public class AppPreferences {
                 .apply();
     }
 
-    public boolean isPreviousScreenTimeoutUnknown() {
-        return getPreviousScreenTimeout() == SCREEN_TIMEOUT_UNKNOWN;
+    public boolean hasPreviousScreenTimeout() {
+        return getPreviousScreenTimeout() != SCREEN_TIMEOUT_UNKNOWN;
     }
 
-    public void setPreviousScreenTimeoutUnknown() {
+    public void clearPreviousScreenTimeout() {
         setPreviousScreenTimeout(SCREEN_TIMEOUT_UNKNOWN);
     }
 }
