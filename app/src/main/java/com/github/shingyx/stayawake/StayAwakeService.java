@@ -30,15 +30,15 @@ public class StayAwakeService extends TileService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String action = intent.getAction();
+        String action = intent == null ? null : intent.getAction();
         if (ACTION_TOGGLE_STAY_AWAKE.equals(action)) {
             toggleKeepingScreenOn();
         } else if (ACTION_STOP_KEEPING_SCREEN_ON.equals(action)) {
             stopKeepingScreenOn();
+        } else {
+            refreshQsTile();
+            updateForegroundService();
         }
-
-        refreshQsTile();
-        updateForegroundService();
 
         return START_STICKY;
     }
@@ -81,6 +81,9 @@ public class StayAwakeService extends TileService {
             appPreferences.setPreviousScreenTimeout(screenTimeout);
             Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, Integer.MAX_VALUE);
         }
+
+        refreshQsTile();
+        updateForegroundService();
     }
 
     private void stopKeepingScreenOn() {
@@ -88,6 +91,9 @@ public class StayAwakeService extends TileService {
             Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, appPreferences.getPreviousScreenTimeout());
             appPreferences.clearPreviousScreenTimeout();
         }
+
+        refreshQsTile();
+        updateForegroundService();
     }
 
     private void refreshQsTile() {
