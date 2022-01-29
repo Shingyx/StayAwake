@@ -114,7 +114,7 @@ public class StayAwakeService extends TileService {
                     .setContentTitle(getString(R.string.notification_title))
                     .setContentText(getString(R.string.notification_content))
                     .setSmallIcon(R.drawable.ic_stat_name)
-                    .setContentIntent(PendingIntent.getService(this, 0, stopIntent, 0))
+                    .setContentIntent(PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE))
                     .build();
             startForeground(1, notification);
         } else {
