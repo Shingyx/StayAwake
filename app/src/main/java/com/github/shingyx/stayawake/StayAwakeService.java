@@ -1,7 +1,5 @@
 package com.github.shingyx.stayawake;
 
-import android.app.Notification;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -37,7 +35,6 @@ public class StayAwakeService extends TileService {
             stopKeepingScreenOn();
         } else {
             refreshQsTile();
-            updateForegroundService();
         }
 
         return START_NOT_STICKY;
@@ -83,7 +80,6 @@ public class StayAwakeService extends TileService {
         }
 
         refreshQsTile();
-        updateForegroundService();
     }
 
     private void stopKeepingScreenOn() {
@@ -93,7 +89,6 @@ public class StayAwakeService extends TileService {
         }
 
         refreshQsTile();
-        updateForegroundService();
     }
 
     private void refreshQsTile() {
@@ -104,21 +99,6 @@ public class StayAwakeService extends TileService {
                     : Tile.STATE_INACTIVE;
             qsTile.setState(state);
             qsTile.updateTile();
-        }
-    }
-
-    private void updateForegroundService() {
-        if (appPreferences.hasPreviousScreenTimeout()) {
-            Intent stopIntent = new Intent(ACTION_STOP_KEEPING_SCREEN_ON, null, this, getClass());
-            Notification notification = new Notification.Builder(this, StayAwakeApplication.SERVICE_NOTIFICATION_CHANNEL_ID)
-                    .setContentTitle(getString(R.string.notification_title))
-                    .setContentText(getString(R.string.notification_content))
-                    .setSmallIcon(R.drawable.ic_stat_name)
-                    .setContentIntent(PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE))
-                    .build();
-            startForeground(1, notification);
-        } else {
-            stopForeground(true);
         }
     }
 

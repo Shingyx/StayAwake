@@ -1,7 +1,4 @@
 <resources>
     <string name="app_name">Stay Awake</string>
-    <string name="notification_channel_description">Service Notification</string>
-    <string name="notification_title">Keeping screen on</string>
-    <string name="notification_content">Tap to disable</string>
     <string name="prompt_allow_write_settings">Please allow Stay Awake to change system settings</string>
 </resources>
