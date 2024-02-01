@@ -9,7 +9,6 @@ import android.widget.Toast;
 
 public class StayAwakeService extends TileService {
     public final static String ACTION_TOGGLE_STAY_AWAKE = "com.github.shingyx.stayawake.TOGGLE_STAY_AWAKE";
-    public final static String ACTION_STOP_KEEPING_SCREEN_ON = "com.github.shingyx.stayawake.STOP_KEEPING_SCREEN_ON";
 
     private AppPreferences appPreferences;
 
@@ -24,8 +23,6 @@ public class StayAwakeService extends TileService {
         String action = intent == null ? null : intent.getAction();
         if (ACTION_TOGGLE_STAY_AWAKE.equals(action)) {
             toggleKeepingScreenOn();
-        } else if (ACTION_STOP_KEEPING_SCREEN_ON.equals(action)) {
-            stopKeepingScreenOn();
         } else {
             refreshQsTile();
         }
