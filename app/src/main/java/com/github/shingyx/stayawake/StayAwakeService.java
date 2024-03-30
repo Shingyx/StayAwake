@@ -31,11 +31,6 @@ public class StayAwakeService extends TileService {
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-    }
-
-    @Override
     public void onStartListening() {
         refreshQsTile();
     }
