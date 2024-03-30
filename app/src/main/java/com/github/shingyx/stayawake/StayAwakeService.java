@@ -59,25 +59,19 @@ public class StayAwakeService extends TileService {
         } else {
             stopKeepingScreenOn();
         }
+        refreshQsTile();
     }
 
     private void startKeepingScreenOn() {
-        if (!appPreferences.hasPreviousScreenTimeout()) {
-            int screenTimeout = Settings.System.getInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, Integer.MIN_VALUE);
-            appPreferences.setPreviousScreenTimeout(screenTimeout);
-            Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, Integer.MAX_VALUE);
-        }
-
-        refreshQsTile();
+        int screenTimeout = Settings.System.getInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, Integer.MIN_VALUE);
+        appPreferences.setPreviousScreenTimeout(screenTimeout);
+        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, Integer.MAX_VALUE);
     }
 
     private void stopKeepingScreenOn() {
-        if (appPreferences.hasPreviousScreenTimeout()) {
-            Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, appPreferences.getPreviousScreenTimeout());
-            appPreferences.clearPreviousScreenTimeout();
-        }
-
-        refreshQsTile();
+        int previousScreenTimeout = appPreferences.getPreviousScreenTimeout();
+        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, previousScreenTimeout);
+        appPreferences.clearPreviousScreenTimeout();
     }
 
     private void refreshQsTile() {
